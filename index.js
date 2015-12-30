@@ -8,17 +8,20 @@ var nacl = require('tweetnacl')
 // Browser tab A
 // privKey(A) = '4oDfzsyer+vZg/SouHNiYov+OqzlcJoa1WNO+Zu+K+o='
 var a = s('localhost:7000', {
-  uuid: 'HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA=',
-  extendedInvites: {
-    '447aTPffUY0o9YKYGq9iHlooC9R4y2hCSv93b1/duIE=': // <- signPubKey(AB)
-    'upA4zHBTedolBKZ6f5TRe+TZcSfPAW1KVfUB2xFjNmDjjtpM999RjSj1gpgar2IeWigL1HjLaEJK/3dvX924gQ==' // <- signPrivKey(AB)
-  }
+    publicKey: 'HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA=',
+    secretKey: '4oDfzsyer+vZg/SouHNiYov+OqzlcJoa1WNO+Zu+K+o='
+  }, {
+    issuedInvites: [
+      '447aTPffUY0o9YKYGq9iHlooC9R4y2hCSv93b1/duIE=' // <- signPubKey(AB)
+    ]
 })
 
 // Browser tab B
 // privKey(B) = 'V6j8zDQOZlRV/HtSNWxel708fe0IHXJWsvhAtgNwSeU='
 var b = s('localhost:7000', {
-  uuid: 'wEXhh5BleF626PHXURkRxMD4jlBO9ohkuGVCPb9AaFU=',
+    publicKey: 'wEXhh5BleF626PHXURkRxMD4jlBO9ohkuGVCPb9AaFU=',
+    secretKey: 'V6j8zDQOZlRV/HtSNWxel708fe0IHXJWsvhAtgNwSeU='
+  }, {
   whitelist: ['HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA='],
   receivedInvites: {
     'HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA=': // <- pubKey(A)
@@ -30,18 +33,24 @@ var b = s('localhost:7000', {
 
 window.nacl = nacl
 window.s =
-module.exports = function (hub, opts) {
+module.exports = function (hub, keyPair, opts) {
+  keyPair = keyPair || nacl.box.keyPair()
   opts = opts || {}
-  Object.assign(opts, {wrap, unwrap})
+  opts.namespace = opts.namespace || 'secureWebrtcSwarm'
+  var me = keyPair.publicKey
+  Object.assign(opts, {
+    uuid: keyPair.publicKey,
+    privKey: keyPair.secretKey,
+    wrap, unwrap
+  })
 
-  var swarm = webrtcSwarm(signalhub('peermusic', hub), opts)
+  var swarm = webrtcSwarm(signalhub(opts.namespace, hub), opts)
   Object.assign(swarm, {
     whitelist: opts.whitelist || [],
     receivedInvites: opts.receivedInvites || {},
-    extendedInvites: opts.extendedInvites || {}
+    issuedInvites: opts.issuedInvites || []
   })
-  var me = opts.uuid
-  if (me) swarm.whitelist.push(me)
+  swarm.whitelist.push(me)
 
   function wrap (data, channel) {
     if (channel === 'all') return data
@@ -71,48 +80,45 @@ module.exports = function (hub, opts) {
   function unwrap (data, channel) {
     if (!data || data.from === me) return data
 
-    if (swarm.whitelist.indexOf(data.from) !== -1) {
-      // decrypt/verify
-      if (swarm.receivedInvites[channel]) {
-        delete swarm.receivedInvites[channel]
+    if (swarm.whitelist.indexOf(data.from) === -1) {
+      if (channel === 'all') {
+        debug('skipping broadcast from unknown peer')
+        return false
       }
-      return data
+
+      if (swarm.issuedInvites.indexOf(data.signPubKey) === -1) {
+        debug('skipping direct message from unknown peer', data)
+        return false
+      }
+
+      var valid = verify(data.from, data.signature, data.signPubKey)
+      if (!valid) {
+        debug('signature invalid - dropping offered pubKey', data)
+        return false
+      }
+
+      debug('received and verified pubKey of invitee, closing invite')
+      swarm.issuedInvites.splice(swarm.issuedInvites.indexOf(data.signPubKey), 1)
+      swarm.whitelist.push(data.from)
     }
 
-    if (channel === 'all') {
-      debug('skipping broadcast from unknown peer')
-      return false
-    }
-
-    if (!swarm.extendedInvites[data.signPubKey]) {
-      debug('skipping signaling data from unknown peer', data)
-      return false
-    }
-
-    var verified = verify(data.from, data.signature, data.signPubKey)
-    if (!verified) {
-      debug('signature invalid - dropping offered pubKey', data)
-      return false
-    }
+    if (channel === 'all') return data
 
     var theirPubKey = data.from
     var myPrivKey = opts.privKey
-    data.signal = decrypt(data.signal, data.nonce, theirPubKey, myPrivKey)
-
-    if (!data.signal) {
-      debug('verification while decrypting failed', data)
+    var signal = decrypt(data.signal, data.nonce, theirPubKey, myPrivKey)
+    if (!signal) {
+      debug('decryption failed', data)
       return false
     }
+    data.signal = JSON.parse(signal)
 
-    data.signal = JSON.parse(data.signal)
-    debug('received and verified pubKey of invitee')
-
-    delete swarm.extendedInvites[data.signPubKey]
-    swarm.whitelist.push(data.from)
-
+    if (swarm.receivedInvites[data.from]) {
+      delete swarm.receivedInvites[data.from]
+      debug('received properly encrypted packages, closing invite')
+    }
     return data
   }
-
   return swarm
 }
 
@@ -123,6 +129,7 @@ function sign (data, signPrivKey) {
   data = nacl.util.encodeBase64(data)
   return data
 }
+
 function deriveSignPubKey (signPrivKey) {
   var signPubKey = nacl.sign.keyPair.fromSecretKey(
     nacl.util.decodeBase64(signPrivKey)
@@ -130,6 +137,7 @@ function deriveSignPubKey (signPrivKey) {
   signPubKey = nacl.util.encodeBase64(signPubKey)
   return signPubKey
 }
+
 function encrypt (data, nonce, theirPubKey, myPrivKey) {
   nonce = nacl.util.decodeBase64(nonce)
   theirPubKey = nacl.util.decodeBase64(theirPubKey)
@@ -139,6 +147,7 @@ function encrypt (data, nonce, theirPubKey, myPrivKey) {
   data = nacl.util.encodeBase64(data)
   return data
 }
+
 function verify (data, signature, signPubKey) {
   signature = nacl.util.decodeBase64(signature)
   signPubKey = nacl.util.decodeBase64(signPubKey)
@@ -146,6 +155,7 @@ function verify (data, signature, signPubKey) {
   var success = nacl.sign.detached.verify(data, signature, signPubKey)
   return success
 }
+
 function decrypt (data, nonce, theirPubKey, myPrivKey) {
   nonce = nacl.util.decodeBase64(nonce)
   theirPubKey = nacl.util.decodeBase64(theirPubKey)
