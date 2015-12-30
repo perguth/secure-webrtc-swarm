@@ -46,7 +46,8 @@ Create a new signing key pair (`signPubKey(AB)`, `signPrivKey(AB)`). Use both th
 ### `unwrap`
 
 - [ ] `/all`
-  - [ ] No decryption - plain text.
+  - [ ] **Whitelist**  
+    Recognizes `UUID(B)`.
 - [ ] `/A`
   - [ ] **Key Exchange and Encryption** <sup>(see step 4 under [Ratcheting Flow](#ratcheting-flow))</sup>  
     Does not recognize `UUID(B)`.  
@@ -54,7 +55,7 @@ Create a new signing key pair (`signPubKey(AB)`, `signPrivKey(AB)`). Use both th
     - [ ] Verifies signature of attached `pubKey(B)` using `signPubKey(AB)`.
       - [ ] Marks the invitation as complete.
       - [ ] Decrypts/verifies WebRTC signaling data using `privKey(A)` and `pubKey(B)`.
-  - [ ] **Just Encryption**  
+  - [ ] **Just Encryption**    
     Recognizes `UUID(B)`.
     - [ ] If there is an open invite regarding **B** it will be marked complete.
     - [ ] Decrypts/verifies using `privKey(A)` and `pubKey(B)`.
