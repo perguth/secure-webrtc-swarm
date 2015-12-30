@@ -1,0 +1,16 @@
+{
+  "name": "secure-webrtc-swarm",
+  "version": "0.0.0",
+  "description": "A crypto wrapper around `webrtc-swarm`.",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard"
+  },
+  "author": "https://github.com/orgs/peermusic/",
+  "license": "MIT",
+  "dependencies": {
+    "debug": "^2.2.0",
+    "signalhub": "^4.3.1",
+    "webrtc-swarm": "^2.2.0"
+  }
+}
