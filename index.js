@@ -11,6 +11,7 @@ var a = s('localhost:7000', {uuid: '03s55f2bdn79pciis2wqub000',
 
 // Browser tab B
 var b = s('localhost:7000', {uuid: 'ciis2wu1f00003s5560m3fzzc',
+  whitelist: ['03s55f2bdn79pciis2wqub000'],
   receivedInvites: { '03s55f2bdn79pciis2wqub000': 'signPrivKey' }
 })
 
@@ -31,47 +32,53 @@ module.exports = function (hub, opts) {
   if (me) swarm.whitelist.push(me)
 
   function wrap (data, channel) {
-    if (channel === 'all' || channel === me) return data
+    if (channel === 'all') return data
 
     if (swarm.receivedInvites[channel]) {
-      // # Key Exchange and Encryption
-      // append auth information
-      // encrypt
       debug('sending ratcheting data to', channel)
       var signPubKey = (swarm.receivedInvites[channel] === 'signPrivKey')
-        ? 'signPubKey' : false
+        ? 'signPubKey' : false // mockup
       data.signPubKey = signPubKey
       data.signature = 'signature'
+      // encrypt/sign
       return data
     }
-    // # Just Encryption/Signing
-    // encrypt with pub key
+
+    if (swarm.whitelist.indexOf(channel) === -1) {
+      throw new Error('Trying to send signaling data to a peer that is neither known nor invited.')
+    }
+
+    // encrypt/sign
     return data
   }
 
   function unwrap (data, channel) {
-    if (channel === 'all') return data
+    if (!data || data.from === me) return data
 
     if (swarm.whitelist.indexOf(data.from) !== -1) {
-      // # Just Decryption/Verification
-      // decrypt
+      // decrypt/verify
+      if (swarm.receivedInvites[channel]) {
+        delete swarm.receivedInvites[channel]
+      }
       return data
     }
 
-    // # Key Exchange and Encryption
     if (!swarm.extendedInvites[data.signPubKey]) {
-      debug('skipping unkown/uninvited peer', data)
+      var msg = (channel === 'all') ? 'broadcast' : 'signaling data'
+      debug('skipping ' + msg + ': peer not known', data)
       return false
     }
-    // verify pubKey
-    var verified = (data.signature === 'signature')
+
+    var verified = (data.signature === 'signature') // mockup
     if (!verified) {
-      debug('signature invalid, dropping offered pubKey', data)
+      debug('signature invalid - dropping offered pubKey', data)
       return false
     }
-    // mark invite complete
-    // decrypt
-    debug('successfully received pubKey')
+
+    // decrypt/verify
+    debug('received and verified pubKey')
+    delete swarm.extendedInvites[data.signPubKey]
+    swarm.whitelist.push(data.from)
     return data
   }
 
