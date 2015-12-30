@@ -63,9 +63,13 @@ module.exports = function (hub, opts) {
       return data
     }
 
+    if (channel === 'all') {
+      debug('skipping broadcast from unknown peer')
+      return false
+    }
+
     if (!swarm.extendedInvites[data.signPubKey]) {
-      var msg = (channel === 'all') ? 'broadcast' : 'signaling data'
-      debug('skipping ' + msg + ': peer not known', data)
+      debug('skipping signaling data from unknown peer', data)
       return false
     }
 
