@@ -3,36 +3,6 @@ var webrtcSwarm = require('./lib/mod-webrtc-swarm')
 var signalhub = require('signalhub')
 var nacl = require('tweetnacl')
 
-/** Test using:
-
-// Browser tab A
-// privKey(A) = '4oDfzsyer+vZg/SouHNiYov+OqzlcJoa1WNO+Zu+K+o='
-var a = s('localhost:7000', {
-    publicKey: 'HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA=',
-    secretKey: '4oDfzsyer+vZg/SouHNiYov+OqzlcJoa1WNO+Zu+K+o='
-  }, {
-    issuedInvites: [
-      '447aTPffUY0o9YKYGq9iHlooC9R4y2hCSv93b1/duIE=' // <- signPubKey(AB)
-    ]
-})
-
-// Browser tab B
-// privKey(B) = 'V6j8zDQOZlRV/HtSNWxel708fe0IHXJWsvhAtgNwSeU='
-var b = s('localhost:7000', {
-    publicKey: 'wEXhh5BleF626PHXURkRxMD4jlBO9ohkuGVCPb9AaFU=',
-    secretKey: 'V6j8zDQOZlRV/HtSNWxel708fe0IHXJWsvhAtgNwSeU='
-  }, {
-  whitelist: ['HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA='],
-  receivedInvites: {
-    'HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA=': // <- pubKey(A)
-    'upA4zHBTedolBKZ6f5TRe+TZcSfPAW1KVfUB2xFjNmDjjtpM999RjSj1gpgar2IeWigL1HjLaEJK/3dvX924gQ==' // <- signPrivKey(AB)
-  }
-})
-
-*/
-
-window.nacl = nacl
-window.s =
 module.exports = function (hub, keyPair, opts) {
   keyPair = keyPair || nacl.box.keyPair()
   opts = opts || {}
@@ -44,7 +14,7 @@ module.exports = function (hub, keyPair, opts) {
     wrap, unwrap
   })
 
-  var swarm = webrtcSwarm(signalhub(opts.namespace, hub), opts)
+  var swarm = webrtcSwarm(hub, opts)
   Object.assign(swarm, {
     whitelist: opts.whitelist || [],
     receivedInvites: opts.receivedInvites || {},
@@ -97,7 +67,7 @@ module.exports = function (hub, keyPair, opts) {
         return false
       }
 
-      debug('received and verified pubKey of invitee, closing invite')
+      debug('received and verified pubKey - closing invite')
       swarm.issuedInvites.splice(swarm.issuedInvites.indexOf(data.signPubKey), 1)
       swarm.whitelist.push(data.from)
     }
@@ -115,7 +85,7 @@ module.exports = function (hub, keyPair, opts) {
 
     if (swarm.receivedInvites[data.from]) {
       delete swarm.receivedInvites[data.from]
-      debug('received properly encrypted packages, closing invite')
+      debug('received properly encrypted packages - closing invite')
     }
     return data
   }
