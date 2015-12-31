@@ -1,13 +1,11 @@
 var debug = require('debug')('secure-webrtc-swarm')
-var webrtcSwarm = require('./lib/mod-webrtc-swarm')
-var signalhub = require('signalhub')
+var webrtcSwarm = require('./mod-webrtc-swarm')
 var nacl = require('tweetnacl')
 
 module.exports = function (hub, keyPair, opts) {
   keyPair = keyPair || nacl.box.keyPair()
   opts = opts || {}
   opts.namespace = opts.namespace || 'secureWebrtcSwarm'
-  var me = keyPair.publicKey
   Object.assign(opts, {
     uuid: keyPair.publicKey,
     privKey: keyPair.secretKey,
@@ -15,6 +13,7 @@ module.exports = function (hub, keyPair, opts) {
   })
 
   var swarm = webrtcSwarm(hub, opts)
+  var me = keyPair.publicKey
   Object.assign(swarm, {
     whitelist: opts.whitelist || [],
     receivedInvites: opts.receivedInvites || {},
