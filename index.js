@@ -25,10 +25,10 @@ module.exports = function (hub, keyPair, opts) {
     if (channel === 'all') return data
 
     if (swarm.whitelist.indexOf(channel) === -1) {
-      throw new Error('Trying to send signaling data to a peer that is neither known nor invited.')
-    }
+      if (!swarm.receivedInvites[channel]) {
+        throw new Error('Trying to send data to a peer that is either not known and not invited or should send us ratcheting data first.', data.from)
+      }
 
-    if (swarm.receivedInvites[channel]) {
       debug('attaching ratcheting data')
       var signPrivKey = swarm.receivedInvites[channel]
       var signPubKey = deriveSignPubKey(signPrivKey)
@@ -49,42 +49,41 @@ module.exports = function (hub, keyPair, opts) {
   function unwrap (data, channel) {
     if (!data || data.from === me) return data
 
-    if (swarm.whitelist.indexOf(data.from) === -1) {
-      if (channel === 'all') {
-        debug('skipping broadcast from unknown peer')
-        return false
+    if (channel === 'all') {
+      if (swarm.receivedInvites[data.from]) {
+        debug('discovered broadcast from inviting peer')
+        return data
       }
-
-      if (swarm.issuedInvites.indexOf(data.signPubKey) === -1) {
-        debug('skipping direct message from unknown peer', data)
-        return false
+      if (swarm.whitelist.indexOf(data.from) !== -1) {
+        return data
       }
+      debug('skipping broadcast from unknown peer', data.from)
+      return false
+    }
 
+    if (swarm.issuedInvites.indexOf(data.signPubKey) !== -1) {
+      debug('trying to verify incoming pubKey')
       var valid = verify(data.from, data.signature, data.signPubKey)
       if (!valid) {
         debug('signature invalid - dropping offered pubKey', data)
         return false
       }
-
-      debug('received and verified pubKey - closing invite')
+      debug('verified incoming pubKey - closing invite')
       swarm.issuedInvites.splice(swarm.issuedInvites.indexOf(data.signPubKey), 1)
       swarm.whitelist.push(data.from)
     }
 
-    if (channel === 'all') return data
-
-    var theirPubKey = data.from
-    var myPrivKey = opts.privKey
-    var signal = decrypt(data.signal, data.nonce, theirPubKey, myPrivKey)
+    var signal = decrypt(data.signal, data.nonce, data.from, opts.privKey)
     if (!signal) {
-      debug('decryption failed', data)
+      debug('signal decryption/verification failed')
       return false
-    }
+    } else debug('signal decryption/verification successfull')
     data.signal = JSON.parse(signal)
 
     if (swarm.receivedInvites[data.from]) {
-      delete swarm.receivedInvites[data.from]
       debug('received properly encrypted packages - closing invite')
+      delete swarm.receivedInvites[data.from]
+      swarm.whitelist.push(data.from)
     }
     return data
   }

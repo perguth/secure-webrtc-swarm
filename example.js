@@ -37,7 +37,6 @@ if (instance === '#b') {
     secretKey: 'V6j8zDQOZlRV/HtSNWxel708fe0IHXJWsvhAtgNwSeU='
   }
   opts = {
-    whitelist: ['HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA='],
     receivedInvites: {
       'HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA=': // <- pubKey(A)
         'upA4zHBTedolBKZ6f5TRe+TZcSfPAW1KVfUB2xFjNmDjjtpM999RjSj1gpgar2IeWigL1HjLaEJK/3dvX924gQ==' // <- signPrivKey(AB)
