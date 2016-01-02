@@ -11,6 +11,6 @@
   "dependencies": {
     "debug": "^2.2.0",
     "tweetnacl": "^0.13.2",
-    "webrtc-swarm": "^2.2.0"
+    "webrtc-swarm": "^2.3.0"
   }
 }

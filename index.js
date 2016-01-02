@@ -1,5 +1,5 @@
 var debug = require('debug')('secure-webrtc-swarm')
-var webrtcSwarm = require('./mod-webrtc-swarm')
+var webrtcSwarm = require('webrtc-swarm')
 var nacl = require('tweetnacl')
 
 module.exports = function (hub, keyPair, opts) {
