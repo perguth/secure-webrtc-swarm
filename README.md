@@ -1,6 +1,7 @@
 # secure-webrtc-swarm
 
-> A wrapper around [webrtc-swarm](https://github.com/mafintosh/webrtc-swarm) that adds peer whitelisting and authenticated asymmetric encryption of the WebRTC signaling data that is passed among peers via [signalhub](https://github.com/mafintosh/signalhub) (see [crypto-ratchet.md](crypto-ratchet.md)).
+> A wrapper around [webrtc-swarm](https://github.com/mafintosh/webrtc-swarm) that adds peer whitelisting and authenticated asymmetric encryption of the WebRTC signaling data using that is passed among peers via [signalhub](https://github.com/mafintosh/signalhub) using [TweetNaCl.js](https://github.com/dchest/tweetnacl-js
+) (see [crypto-ratchet.md](crypto-ratchet.md)).
 
 ## Install
 
