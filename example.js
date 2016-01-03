@@ -7,17 +7,17 @@ wzrd example.js -- -d
 ``` */
 var signalhub = require('signalhub')
 var swarm = require('./index.js')
-// uncomment to see debugging information:
-// window.localStorage.debug = 'secure-webrtc-swarm'
+window.localStorage.debug = 'secure-webrtc-swarm'
 
-var hub = signalhub('swarm-example', ['http://localhost:7000'])
-
-var instance = window.location.hash
-var html = function (html) { document.body.innerHTML += '<br>' + html }
 var sw, keyPair, opts
+var hash = window.location.hash
 
-if (!instance) {
-  html('I am peer #a - <a href=#b target=_blank>open tab for peer #b</a><br>')
+var hub = signalhub('secure-swarm-example', ['http://localhost:7000'])
+
+if (!hash || hash === '#a') {
+  html('<h1>I am peer #<b>a</b></h1>')
+  html('<a href=#b target=_blank>open tab for peer #b</a><br>')
+
   keyPair = {
     publicKey: 'HQpECMWIUaOIvdTLzmvfFN1CZMSFWAOmJ1pCEYCr5zA=',
     secretKey: '4oDfzsyer+vZg/SouHNiYov+OqzlcJoa1WNO+Zu+K+o='
@@ -30,8 +30,9 @@ if (!instance) {
   sw = swarm(hub, keyPair, opts)
 }
 
-if (instance === '#b') {
-  html('I am peer #b')
+if (hash === '#b') {
+  html('<h1>I am peer #<b>b</b></h1>')
+
   keyPair = {
     publicKey: 'wEXhh5BleF626PHXURkRxMD4jlBO9ohkuGVCPb9AaFU=',
     secretKey: 'V6j8zDQOZlRV/HtSNWxel708fe0IHXJWsvhAtgNwSeU='
@@ -49,3 +50,7 @@ sw.on('peer', function (peer, id) {
   html('connected to a new peer: ' + id)
   html('total peers: ' + sw.peers.length)
 })
+
+function html (html) { document.body.innerHTML += '<br>' + html }
+
+window.sw = sw
