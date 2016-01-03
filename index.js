@@ -1,6 +1,6 @@
 var debug = require('debug')('secure-webrtc-swarm')
-var webrtcSwarm = require('webrtc-swarm')
 var nacl = require('tweetnacl')
+var webrtcSwarm = require('webrtc-swarm')
 
 module.exports = function (hub, keyPair, opts) {
   keyPair = keyPair || nacl.box.keyPair()
@@ -13,12 +13,13 @@ module.exports = function (hub, keyPair, opts) {
   })
 
   var swarm = webrtcSwarm(hub, opts)
-  var me = keyPair.publicKey
+
   Object.assign(swarm, {
     whitelist: opts.whitelist || [],
     receivedInvites: opts.receivedInvites || {},
     issuedInvites: opts.issuedInvites || []
   })
+  var me = keyPair.publicKey
   swarm.whitelist.push(me)
 
   function wrap (data, channel) {
