@@ -72,6 +72,7 @@ module.exports = function (hub, keyPair, opts) {
       debug('verified incoming pubKey - closing invite')
       swarm.issuedInvites.splice(swarm.issuedInvites.indexOf(data.signPubKey), 1)
       swarm.whitelist.push(data.from)
+      swarm.emit('accept', data.from, data.signPubKey)
     }
 
     var signal = decrypt(data.signal, data.nonce, data.from, opts.privKey)
@@ -85,6 +86,7 @@ module.exports = function (hub, keyPair, opts) {
       debug('received properly encrypted packages - closing invite')
       delete swarm.receivedInvites[data.from]
       swarm.whitelist.push(data.from)
+      swarm.emit('accept', data.from)
     }
     return data
   }

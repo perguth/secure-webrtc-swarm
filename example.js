@@ -50,6 +50,9 @@ sw.on('peer', function (peer, id) {
   html('connected to a new peer: ' + id)
   html('total peers: ' + sw.peers.length)
 })
+sw.on('accept', function (peer, sharedSignPubKey) {
+  html('peer accepted invite')
+})
 
 function html (html) { document.body.innerHTML += '<br>' + html }
 
