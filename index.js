@@ -58,10 +58,10 @@ module.exports = function (hub, keyPair, opts) {
       if (swarm.whitelist.indexOf(data.from) !== -1) {
         return data
       }
-      debug('skipping broadcast from unknown peer', data.from)
       return false
     }
 
+    debug('received direct message from peer', data.from)
     if (swarm.issuedInvites.indexOf(data.signPubKey) !== -1) {
       debug('trying to verify incoming pubKey')
       var valid = verify(data.from, data.signature, data.signPubKey)
