@@ -11,7 +11,7 @@
   "dependencies": {
     "debug": "^2.2.0",
     "tweetnacl": "^0.13.2",
-    "webrtc-swarm": "^2.3.0"
+    "webrtc-swarm": "git+https://github.com/mafintosh/webrtc-swarm.git"
   },
   "devDependencies": {
     "standard": "^5.4.1"
