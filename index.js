@@ -10,11 +10,12 @@ module.exports = Object.assign(function (hub, opts) {
   var swarm = webrtcSwarm(hub, Object.assign(opts, {
     uuid: keyPair.publicKey,
     namespace: opts.namespace || cuid(),
-    wrap, unwrap
+    wrap,
+    unwrap
   }))
   ;[
     'authenticatedPeers',
-    'blacklist', // todo
+    'blacklist',
     'createInvite',
     'receivedInvites',
     'receiveInvite',
@@ -26,17 +27,17 @@ module.exports = Object.assign(function (hub, opts) {
   })
   delete opts.keyPair
   if (!swarm.sharedSecret.length) swarm.sharedSecret = null
-  // swarm.receivedInvites = {}
-  swarm.pubKey = keyPair.publicKey
-  swarm.privKey = keyPair.secretKey
+  swarm.publicKey = keyPair.publicKey
+  swarm.privateKey = keyPair.secretKey
   swarm.authenticatedPeers.push(keyPair.publicKey)
   swarm.createInvite = createInvite
   swarm.receiveInvite = receiveInvite
+
   return swarm
 
   function wrap (data, channel) {
     if (isBlacklisted(swarm, data)) {
-      debug('ignoring blacklisted peer', data.form)
+      debug('ignoring blacklisted peer', data.from)
       return
     }
     if (channel === 'all') return data
@@ -56,7 +57,7 @@ module.exports = Object.assign(function (hub, opts) {
 
     var nonce = nacl.util.encodeBase64(nacl.randomBytes(24))
     var theirPubKey = channel
-    var myPrivKey = swarm.privKey
+    var myPrivKey = swarm.privateKey
     var signal = JSON.stringify(data.signal)
     data.nonce = nonce
     data.signal = encrypt(signal, nonce, theirPubKey, myPrivKey)
@@ -66,12 +67,11 @@ module.exports = Object.assign(function (hub, opts) {
   function unwrap (data, channel) {
     if (!data || data.from === swarm.publicKey) return data
     if (isBlacklisted(swarm, data)) {
-      debug('ignoring blacklisted peer', data.form)
+      debug('ignoring blacklisted peer', data.from)
       return
     }
 
     if (channel === 'all') {
-      console.log('unwrap on all', swarm.receivedInvites)
       if (swarm.receivedInvites[data.from]) {
         debug('discovered broadcast from inviting peer', data.from)
         return data
@@ -101,7 +101,7 @@ module.exports = Object.assign(function (hub, opts) {
       swarm.emit('accept', data.from, data.signPubKey)
     }
 
-    var signal = decrypt(data.signal, data.nonce, data.from, swarm.privKey)
+    var signal = decrypt(data.signal, data.nonce, data.from, swarm.privateKey)
     if (!signal) {
       debug('signal decryption/verification failed')
       return false
@@ -123,9 +123,8 @@ module.exports = Object.assign(function (hub, opts) {
 
   function createInvite () {
     var sharedSignKey = stringify(nacl.sign.keyPair())
-    console.log('created invite', sharedSignKey)
     swarm.issuedInvites.push(sharedSignKey.publicKey)
-    return `${swarm.pubKey}:${sharedSignKey.secretKey}`
+    return `${swarm.publicKey}:${sharedSignKey.secretKey}`
   }
 
   function receiveInvite (invite) {
