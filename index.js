@@ -5,7 +5,6 @@ var webrtcSwarm = require('webrtc-swarm')
 
 module.exports = Object.assign(function (hub, opts) {
   opts = opts || {}
-
   var keyPair = opts.keyPair || stringify(nacl.box.keyPair())
   var swarm = webrtcSwarm(hub, Object.assign(opts, {
     uuid: keyPair.publicKey,
