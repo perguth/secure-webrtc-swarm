@@ -1,46 +1,63 @@
+var cuid = require('cuid')
 var debug = require('debug')('secure-webrtc-swarm')
 var nacl = require('tweetnacl')
 var webrtcSwarm = require('webrtc-swarm')
 
-module.exports = function (hub, keyPair, opts) {
-  keyPair = keyPair || nacl.box.keyPair()
+module.exports = Object.assign(function (hub, opts) {
   opts = opts || {}
-  opts.namespace = opts.namespace || 'secureWebrtcSwarm'
-  Object.assign(opts, {
+
+  var keyPair = opts.keyPair || stringify(nacl.box.keyPair())
+  var swarm = webrtcSwarm(hub, Object.assign(opts, {
     uuid: keyPair.publicKey,
-    privKey: keyPair.secretKey,
-    wrap, unwrap
+    namespace: opts.namespace || cuid(),
+    wrap,
+    unwrap
+  }))
+  ;[
+    'authenticatedPeers',
+    'blacklist',
+    'createInvite',
+    'receivedInvites',
+    'receiveInvite',
+    'issuedInvites',
+    'sharedSecret'
+  ].forEach(function (attr) {
+    swarm[attr] = opts[attr] || []
+    delete opts[attr]
   })
+  delete opts.keyPair
+  if (!swarm.sharedSecret.length) swarm.sharedSecret = null
+  swarm.publicKey = keyPair.publicKey
+  swarm.privateKey = keyPair.secretKey
+  swarm.authenticatedPeers.push(keyPair.publicKey)
+  swarm.createInvite = createInvite
+  swarm.receiveInvite = receiveInvite
 
-  var swarm = webrtcSwarm(hub, opts)
-
-  Object.assign(swarm, {
-    whitelist: opts.whitelist || [],
-    receivedInvites: opts.receivedInvites || {},
-    issuedInvites: opts.issuedInvites || []
-  })
-  var me = keyPair.publicKey
-  swarm.whitelist.push(me)
+  return swarm
 
   function wrap (data, channel) {
+    if (isBlacklisted(swarm, data)) {
+      debug('ignoring blacklisted peer', data.from)
+      return
+    }
     if (channel === 'all') return data
 
-    if (swarm.whitelist.indexOf(channel) === -1) {
-      if (!swarm.receivedInvites[channel]) {
+    if (swarm.authenticatedPeers.indexOf(channel) === -1) {
+      var signPrivKey = swarm.receivedInvites[channel] || swarm.sharedSecret
+      if (!signPrivKey) {
         throw new Error('Trying to send data to a peer that is either not known and not invited or should send us ratcheting data first.', data.from)
       }
-
-      debug('attaching ratcheting data')
-      var signPrivKey = swarm.receivedInvites[channel]
       var signPubKey = deriveSignPubKey(signPrivKey)
-      var signature = sign(me, signPrivKey)
+      var signature = sign(swarm.publicKey, signPrivKey)
+
+      debug('attaching crypto algorithm data')
       data.signPubKey = signPubKey
       data.signature = signature
     }
 
     var nonce = nacl.util.encodeBase64(nacl.randomBytes(24))
     var theirPubKey = channel
-    var myPrivKey = opts.privKey
+    var myPrivKey = swarm.privateKey
     var signal = JSON.stringify(data.signal)
     data.nonce = nonce
     data.signal = encrypt(signal, nonce, theirPubKey, myPrivKey)
@@ -48,50 +65,77 @@ module.exports = function (hub, keyPair, opts) {
   }
 
   function unwrap (data, channel) {
-    if (!data || data.from === me) return data
+    if (!data || data.from === swarm.publicKey) return data
+    if (isBlacklisted(swarm, data)) {
+      debug('ignoring blacklisted peer', data.from)
+      return
+    }
 
     if (channel === 'all') {
       if (swarm.receivedInvites[data.from]) {
-        debug('discovered broadcast from inviting peer')
+        debug('discovered broadcast from inviting peer', data.from)
         return data
       }
-      if (swarm.whitelist.indexOf(data.from) !== -1) {
-        return data
-      }
+      if (
+        swarm.authenticatedPeers.indexOf(data.from) !== -1 ||
+        swarm.sharedSecret
+      ) return data
       return false
     }
 
     debug('received direct message from peer', data.from)
-    if (swarm.issuedInvites.indexOf(data.signPubKey) !== -1) {
-      debug('trying to verify incoming pubKey')
+    if (
+      swarm.issuedInvites.indexOf(data.signPubKey) !== -1 ||
+      data.signPubKey === swarm.sharedSecret
+    ) {
+      debug('trying to verify incoming pubKey', data.from, data.signature, data.signPubKey)
       var valid = verify(data.from, data.signature, data.signPubKey)
       if (!valid) {
-        debug('signature invalid - dropping offered pubKey', data)
+        debug('signature invalid - ignoring authentication request', data)
         return false
       }
       debug('verified incoming pubKey - closing invite')
       swarm.issuedInvites.splice(swarm.issuedInvites.indexOf(data.signPubKey), 1)
-      swarm.whitelist.push(data.from)
+      swarm.authenticatedPeers.push(data.from)
+      debug('authenticatedPeers', swarm.authenticatedPeers)
       swarm.emit('accept', data.from, data.signPubKey)
     }
 
-    var signal = decrypt(data.signal, data.nonce, data.from, opts.privKey)
+    var signal = decrypt(data.signal, data.nonce, data.from, swarm.privateKey)
     if (!signal) {
       debug('signal decryption/verification failed')
       return false
     } else debug('signal decryption/verification successfull')
+
     data.signal = JSON.parse(signal)
 
-    if (swarm.receivedInvites[data.from]) {
-      debug('received properly encrypted packages - closing invite')
+    if (swarm.authenticatedPeers.some(function (x) { return x === data.from })) {
+      return data
+    }
+    if (swarm.receivedInvites[data.from] || swarm.sharedSecret) {
+      debug('received properly encrypted packages - adding peer', data.from)
       delete swarm.receivedInvites[data.from]
-      swarm.whitelist.push(data.from)
+      swarm.authenticatedPeers.push(data.from)
       swarm.emit('accept', data.from)
     }
     return data
   }
-  return swarm
-}
+
+  function createInvite () {
+    var sharedSignKey = stringify(nacl.sign.keyPair())
+    swarm.issuedInvites.push(sharedSignKey.publicKey)
+    return `${swarm.publicKey}:${sharedSignKey.secretKey}`
+  }
+
+  function receiveInvite (invite) {
+    invite = invite.split(':')
+    Object.assign(swarm.receivedInvites, { [invite[0]]: invite[1] })
+  }
+}, {
+  createSecret: function () {
+    return stringify(nacl.sign.keyPair()).secretKey
+  }
+})
 
 function sign (data, signPrivKey) {
   signPrivKey = nacl.util.decodeBase64(signPrivKey)
@@ -136,4 +180,15 @@ function decrypt (data, nonce, theirPubKey, myPrivKey) {
   if (!data) return false
   data = nacl.util.encodeUTF8(data)
   return data
+}
+
+function stringify (keyPair) {
+  return {
+    publicKey: nacl.util.encodeBase64(keyPair.publicKey),
+    secretKey: nacl.util.encodeBase64(keyPair.secretKey)
+  }
+}
+
+function isBlacklisted (swarm, data) {
+  return swarm.blacklist.some(function (x) { return x === data.from })
 }
