@@ -4,7 +4,7 @@
   "description": "A crypto wrapper around `webrtc-swarm`.",
   "main": "index.js",
   "scripts": {
-    "test": "standard"
+    "test": "standard && tape test.js"
   },
   "author": "https://github.com/orgs/peermusic/",
   "license": "MIT",
@@ -14,6 +14,9 @@
     "webrtc-swarm": "git+https://github.com/mafintosh/webrtc-swarm.git"
   },
   "devDependencies": {
+    "electron-webrtc": "^0.3.0",
+    "flip-tape": "^4.1.2",
+    "signalhub": "^4.9.0",
     "standard": "^5.4.1"
   }
 }
