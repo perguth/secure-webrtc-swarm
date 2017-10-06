@@ -9,14 +9,14 @@
   "author": "https://github.com/orgs/peermusic/",
   "license": "MIT",
   "dependencies": {
-    "debug": "^2.2.0",
-    "tweetnacl": "^0.13.2",
+    "debug": "^3.1.0",
+    "tweetnacl": "^1.0.0",
     "webrtc-swarm": "git+https://github.com/mafintosh/webrtc-swarm.git"
   },
   "devDependencies": {
     "electron-webrtc": "^0.3.0",
     "flip-tape": "^4.1.2",
     "signalhub": "^4.9.0",
-    "standard": "^5.4.1"
+    "standard": "^10.0.3"
   }
 }
