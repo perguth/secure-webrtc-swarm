@@ -16,23 +16,27 @@ module.exports = Object.assign(function (hub, opts) {
     'authenticatedPeers',
     'blacklist', // todo
     'createInvite',
+    'receivedInvites',
     'receiveInvite',
     'issuedInvites',
-    'receivedInvites',
     'sharedSecret'
   ].forEach(function (attr) {
     swarm[attr] = opts[attr] || []
     delete opts[attr]
   })
   delete opts.keyPair
+  if (!swarm.sharedSecret.length) swarm.sharedSecret = null
+  // swarm.receivedInvites = {}
   swarm.pubKey = keyPair.publicKey
   swarm.privKey = keyPair.secretKey
   swarm.authenticatedPeers.push(keyPair.publicKey)
+  swarm.createInvite = createInvite
+  swarm.receiveInvite = receiveInvite
   return swarm
 
   function wrap (data, channel) {
     if (isBlacklisted(swarm, data)) {
-      debug('ignoring blacklisted peer', channel)
+      debug('ignoring blacklisted peer', data.form)
       return
     }
     if (channel === 'all') return data
@@ -67,8 +71,9 @@ module.exports = Object.assign(function (hub, opts) {
     }
 
     if (channel === 'all') {
+      console.log('unwrap on all', swarm.receivedInvites)
       if (swarm.receivedInvites[data.from]) {
-        debug('discovered broadcast from inviting peer', data.form)
+        debug('discovered broadcast from inviting peer', data.from)
         return data
       }
       if (
@@ -83,10 +88,10 @@ module.exports = Object.assign(function (hub, opts) {
       swarm.issuedInvites.indexOf(data.signPubKey) !== -1 ||
       data.signPubKey === swarm.sharedSecret
     ) {
-      debug('trying to verify incoming pubKey')
+      debug('trying to verify incoming pubKey', data.from, data.signature, data.signPubKey)
       var valid = verify(data.from, data.signature, data.signPubKey)
       if (!valid) {
-        debug('signature invalid - dropping offered pubKey', data)
+        debug('signature invalid - ignoring authentication request', data)
         return false
       }
       debug('verified incoming pubKey - closing invite')
@@ -114,6 +119,18 @@ module.exports = Object.assign(function (hub, opts) {
       swarm.emit('accept', data.from)
     }
     return data
+  }
+
+  function createInvite () {
+    var sharedSignKey = stringify(nacl.sign.keyPair())
+    console.log('created invite', sharedSignKey)
+    swarm.issuedInvites.push(sharedSignKey.publicKey)
+    return `${swarm.pubKey}:${sharedSignKey.secretKey}`
+  }
+
+  function receiveInvite (invite) {
+    invite = invite.split(':')
+    Object.assign(swarm.receivedInvites, { [invite[0]]: invite[1] })
   }
 }, {
   createSecret: function () {
