@@ -1,8 +1,7 @@
-var test = require('flip-tape')
-var nacl = require('tweetnacl')
-var swarm = require('.')
 var server = require('signalhub/server')()
 var signalhub = require('signalhub')
+var swarm = require('.')
+var test = require('flip-tape')
 var wrtc = require('electron-webrtc')()
 
 test.onFinish(function () {
@@ -11,37 +10,24 @@ test.onFinish(function () {
 })
 
 server.listen(9000, function () {
-  'greet and close'.test(function (t) {
+  'greet and close using a shared secret'.test(function (t) {
     t.plan(8)
-
-    var key1 = nacl.box.keyPair()
-    key1 = {
-      secretKey: nacl.util.encodeBase64(key1.secretKey),
-      publicKey: nacl.util.encodeBase64(key1.publicKey)
-    }
-    var key2 = nacl.box.keyPair()
-    key2 = {
-      secretKey: nacl.util.encodeBase64(key2.secretKey),
-      publicKey: nacl.util.encodeBase64(key2.publicKey)
-    }
-
-    var invite = nacl.sign.keyPair()
-    invite = {
-      secretKey: nacl.util.encodeBase64(invite.secretKey),
-      publicKey: nacl.util.encodeBase64(invite.publicKey)
-    }
 
     var hub1 = signalhub('app', 'localhost:9000')
     var hub2 = signalhub('app', 'localhost:9000')
 
-    var sw1 = swarm(hub1, key1, {
-      issuedInvites: [invite.publicKey],
+    var sharedSecret = swarm.createSecret()
+
+    var sw1 = swarm(hub1, {
+      // issuedInvites: [invite.publicKey],
+      sharedSecret,
       wrtc
     })
-    var sw2 = swarm(hub2, key2, {
-      receivedInvites: {
-        [key1.publicKey]: invite.secretKey
-      },
+    var sw2 = swarm(hub2, {
+      // receivedInvites: {
+      //   [key1.publicKey]: invite.secretKey
+      // },
+      sharedSecret,
       wrtc
     })
 
