@@ -20,8 +20,8 @@ var signalhub = require('signalhub')
 var swarm = require('secure-webrtc-swarm')
 var wrtc = require('electron-webrtc')()
 
-var hub1 = signalhub('appName', ['http://signalhub-server.com'])
-var hub2 = signalhub('appName', ['http://signalhub-server.com'])
+var hub1 = signalhub('appName', ['https://signalhub-server.com'])
+var hub2 = signalhub('appName', ['https://signalhub-server.com'])
 
 var sharedSecret = swarm.createSecret()
 
