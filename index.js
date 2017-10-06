@@ -31,6 +31,10 @@ module.exports = Object.assign(function (hub, opts) {
   return swarm
 
   function wrap (data, channel) {
+    if (isBlacklisted(swarm, data)) {
+      debug('ignoring blacklisted peer', channel)
+      return
+    }
     if (channel === 'all') return data
 
     if (swarm.authenticatedPeers.indexOf(channel) === -1) {
@@ -57,10 +61,14 @@ module.exports = Object.assign(function (hub, opts) {
 
   function unwrap (data, channel) {
     if (!data || data.from === swarm.publicKey) return data
+    if (isBlacklisted(swarm, data)) {
+      debug('ignoring blacklisted peer', data.form)
+      return
+    }
 
     if (channel === 'all') {
       if (swarm.receivedInvites[data.from]) {
-        debug('discovered broadcast from inviting peer')
+        debug('discovered broadcast from inviting peer', data.form)
         return data
       }
       if (
@@ -163,4 +171,8 @@ function stringify (keyPair) {
     publicKey: nacl.util.encodeBase64(keyPair.publicKey),
     secretKey: nacl.util.encodeBase64(keyPair.secretKey)
   }
+}
+
+function isBlacklisted (swarm, data) {
+  return swarm.blacklist.some(function (x) { return x === data.from })
 }
