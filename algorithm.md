@@ -1,6 +1,6 @@
 # Algorithm
 
-> currently not completely up to date
+> *document currently not completely up to date*
 
 The aim is to encrypt the WebRTC signaling data using public-key authenticated encryption. The inital key material is transferred from one party to the other out-of-band. Based on that the remaining required key material is securely delivered in-band using public-key signatures.
 
