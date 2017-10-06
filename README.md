@@ -8,28 +8,35 @@ When connecting multiple peers via [webrtc-swarm](https://github.com/mafintosh/w
 ## Install
 
 ```sh
-npm install https://github.com/peermusic/secure-webrtc-swarm.git
+npm install secure-webrtc-swarm
 ```
 
 ## Usage
 
 ```js
-var nacl = require('tweetnacl')
 var signalhub = require('signalhub')
 var swarm = require('secure-webrtc-swarm')
 
-var hub = signalhub('swarm-example', ['http://yourdomain.com'])
-var keyPair = nacl.box.keyPair()
+var hub1 = signalhub('appName', ['http://signalhub-server.com'])
+var hub2 = signalhub('appName', ['http://signalhub-server.com'])
 
-var sw = swarm(hub, keyPair)
+var sharedSecret = swarm.createSecret()
 
-sw.on('peer', function (peer, id) {
+var sw1 = swarm(hub1, {
+  sharedSecret,
+  wrtc // not needed in the browser
+})
+var sw2 = swarm(hub2, {
+  sharedSecret,
+  wrtc // not needed in the browser
+})
+
+sw1.on('peer', function (peer, id) {
   console.log('connected to a new peer:', id)
   console.log('total peers:', sw.peers.length)
 })
 ```
-
-Adding inviting peers works by modifying the `sw` object or already providing the relevant information while setting `sw` up. See the [tests](test.js) for reference.
+See [test.js](test.js) for further reference.
 
 ## License
 
