@@ -30,7 +30,7 @@ server.listen(9000, function () {
     greetAndClose(sw1, sw2)
   })
 
-  'greet and close using `.createInvite()` and `.receiveInvite()`'.test(function (t) {
+  'connect by issuing and accepting an invite'.test(function (t) {
     t.plan(8)
 
     var hub1 = signalhub('app', 'localhost:9000')
