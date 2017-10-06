@@ -1,7 +1,7 @@
 # secure-webrtc-swarm
 
 > A wrapper around [webrtc-swarm](https://github.com/mafintosh/webrtc-swarm) that adds peer whitelisting and authenticated asymmetric encryption of the WebRTC signaling data using that is passed among peers via [signalhub](https://github.com/mafintosh/signalhub) using [TweetNaCl.js](https://github.com/dchest/tweetnacl-js
-) (see [crypto-ratchet.md](crypto-ratchet.md)).
+) (see [algorithm.md](algorithm.md)).
 
 ## Install
 
@@ -27,7 +27,7 @@ sw.on('peer', function (peer, id) {
 })
 ```
 
-Adding inviting peers works by modifying the `sw` object or already providing the relevant information while setting `sw` up. See the [example](example.js) for reference.
+Adding inviting peers works by modifying the `sw` object or already providing the relevant information while setting `sw` up. See the [tests](test.js) for reference.
 
 ## License
 
