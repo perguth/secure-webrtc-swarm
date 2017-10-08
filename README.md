@@ -1,5 +1,7 @@
 # secure-webrtc-swarm
 
+***This module currently sucks... please drop by later when I re-star this repo.***
+
 > A wrapper around [webrtc-swarm](https://github.com/mafintosh/webrtc-swarm) that adds peer whitelisting and authenticated asymmetric encryption of the WebRTC signaling data using [TweetNaCl.js](https://github.com/dchest/tweetnacl-js
 ) (see [algorithm.md](algorithm.md)).
 
