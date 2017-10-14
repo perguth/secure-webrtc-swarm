@@ -16,31 +16,16 @@ server.listen(9000, function () {
     var hub1 = signalhub('app', 'localhost:9000')
     var hub2 = signalhub('app', 'localhost:9000')
 
-    var sharedSecret = swarm.createSecret()
+    var mnemonic = swarm.generateMnemonic()
 
     var sw1 = swarm(hub1, {
-      sharedSecret,
+      mnemonic,
       wrtc
     })
     var sw2 = swarm(hub2, {
-      sharedSecret,
+      mnemonic,
       wrtc
     })
-
-    greetAndClose(sw1, sw2)
-  })
-
-  'connect by issuing and accepting an invite'.test(function (t) {
-    t.plan(8)
-
-    var hub1 = signalhub('app', 'localhost:9000')
-    var hub2 = signalhub('app', 'localhost:9000')
-
-    var sw1 = swarm(hub1, {wrtc})
-    var sw2 = swarm(hub2, {wrtc})
-
-    var invite = sw1.createInvite()
-    sw2.receiveInvite(invite)
 
     greetAndClose(sw1, sw2)
   })

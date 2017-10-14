@@ -9,9 +9,10 @@
   "author": "https://github.com/orgs/peermusic/",
   "license": "MIT",
   "dependencies": {
-    "debug": "^2.2.0",
-    "tweetnacl": "^0.13.2",
-    "webrtc-swarm": "git+https://github.com/mafintosh/webrtc-swarm.git"
+    "crypto-js": "^3.1.9-1",
+    "debug": "^3.1.0",
+    "secure-randword": "^0.1.4",
+    "webrtc-swarm": "^2.8.0"
   },
   "devDependencies": {
     "electron-webrtc": "^0.3.0",
