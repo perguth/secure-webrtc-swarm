@@ -4,6 +4,8 @@
 
 When connecting multiple peers via [webrtc-swarm](https://github.com/mafintosh/webrtc-swarm) personal information like available IP addresses are exchanged via a central thin server. This means there is the risk of information leakage and man-in-the-middle attacks. `secure-webrtc-swarm` encrypts this data stream using a word mnemonic like `scale-world-peace`.
 
+This mnemonic word combination should be shared out of band eg. by passing it along in the hash portion of a link (see eg. [Peertransfer](https://github.com/perguth/peertransfer/)).
+
 ## Install
 
 ```sh
