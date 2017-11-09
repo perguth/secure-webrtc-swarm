@@ -24,7 +24,7 @@ var wrtc = require('electron-webrtc')() // not needed in the browser
 var hub1 = Hub('myNamespace', ['https://signalhub.perguth.de:65300/'])
 var hub2 = Hub('myNamespace', ['https://signalhub.perguth.de:65300/'])
 
-var secret = Swarm.createSecret() // default: 3
+var secret = Swarm.createSecret() // default: 16
 
 var swarm1 = new Swarm(hub1, {
   secret,
