@@ -1,14 +1,18 @@
-var debug = require('debug')('secure-webrtc-swarm')
-var swarm = require('webrtc-swarm')
-var randword = require('secure-randword')
 var aes = require('crypto-js').AES
+var debug = require('debug')('secure-webrtc-swarm')
 var enc = require('crypto-js').enc.Utf8
+var randword = require('secure-randword')
+var Swarm = require('webrtc-swarm')
 
-module.exports = Object.assign(SecureWebRTCSwarm, {generateMnemonic: generateMnemonic})
+module.exports = Main
 
-function SecureWebRTCSwarm (hub, opts) {
-  if (!(this instanceof SecureWebRTCSwarm)) return new SecureWebRTCSwarm(hub, opts)
-  if (!hub) throw new Error('SignalHub instance required')
+Main.generateMnemonic = function (length) {
+  return randword(length || 3).join('-')
+}
+
+function Main (hub, opts) {
+  if (!(this instanceof Main)) return new Main(hub, opts)
+  if (!hub) throw new Error('`signalhub` instance required, see: https://github.com/mafintosh/signalhub')
   opts = opts || {}
   var mnemonic = opts.mnemonic || this.generateMnemonic(opts.mnemonicLength)
 
@@ -32,9 +36,7 @@ function SecureWebRTCSwarm (hub, opts) {
     }
   })
 
-  return Object.assign(swarm(hub, opts), {mnemonic: mnemonic})
-}
-
-function generateMnemonic (len) {
-  return randword(len || 3).join('-')
+  var swarm = new Swarm(hub, opts)
+  swarm.mnemonic = mnemonic
+  return swarm
 }

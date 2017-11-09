@@ -1,8 +1,9 @@
-var server = require('signalhub/server')()
-var signalhub = require('signalhub')
-var swarm = require('.')
+var Hub = require('signalhub')
+var Server = require('signalhub/server')
+var Swarm = require('.')
 var test = require('flip-tape')
 var wrtc = require('electron-webrtc')()
+var server = new Server()
 
 test.onFinish(function () {
   server.close()
@@ -13,63 +14,63 @@ server.listen(9000, function () {
   'connect using a shared secret'.test(function (t) {
     t.plan(8)
 
-    var hub1 = signalhub('app', 'localhost:9000')
-    var hub2 = signalhub('app', 'localhost:9000')
+    var hub1 = new Hub('test', 'localhost:9000')
+    var hub2 = new Hub('test', 'localhost:9000')
 
-    var mnemonic = swarm.generateMnemonic()
+    var mnemonic = Swarm.generateMnemonic()
 
-    var sw1 = swarm(hub1, {
+    var swarm1 = new Swarm(hub1, {
       mnemonic,
       wrtc
     })
-    var sw2 = swarm(hub2, {
+    var swarm2 = new Swarm(hub2, {
       mnemonic,
       wrtc
     })
 
-    greetAndClose(sw1, sw2)
+    greetAndClose(swarm1, swarm2)
   })
 })
 
-function greetAndClose (sw1, sw2) {
+function greetAndClose (swarm1, swarm2) {
   var greeting = 'hello'
   var goodbye = 'goodbye'
 
   var peerIds = {}
 
-  sw1.on('peer', function (peer, id) {
-    'connected to peer from sw2'.pass()
-    peerIds.sw2 = id
+  swarm1.on('peer', function (peer, id) {
+    'connected to peer from swarm2'.pass()
+    peerIds.swarm2 = id
     peer.send(greeting)
     peer.on('data', function (data) {
       'goodbye received'.equal(data.toString(), goodbye)
-      sw1.close(function () {
-        'swarm sw1 closed'.pass()
+      swarm1.close(function () {
+        'swarm1 closed'.pass()
       })
     })
   })
 
-  sw2.on('peer', function (peer, id) {
-    'connected to peer from sw1'.pass()
-    peerIds.sw1 = id
+  swarm2.on('peer', function (peer, id) {
+    'connected to peer from swarm1'.pass()
+    peerIds.swarm1 = id
     peer.on('data', function (data) {
       'greeting received'.equal(data.toString(), greeting)
       peer.send(goodbye)
-      sw2.close(function () {
-        'swarm sw2 closed'.pass()
+      swarm2.close(function () {
+        'swarm2 closed'.pass()
       })
     })
   })
 
-  sw1.on('disconnect', function (peer, id) {
-    if (id === peerIds.sw2) {
-      'connection to peer from sw2 lost'.pass()
+  swarm1.on('disconnect', function (peer, id) {
+    if (id === peerIds.swarm2) {
+      'connection to peer from swarm2 lost'.pass()
     }
   })
 
-  sw2.on('disconnect', function (peer, id) {
-    if (id === peerIds.sw1) {
-      'connection to peer from sw1 lost'.pass()
+  swarm2.on('disconnect', function (peer, id) {
+    if (id === peerIds.swarm1) {
+      'connection to peer from swarm1 lost'.pass()
     }
   })
 }
