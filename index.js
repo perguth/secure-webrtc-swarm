@@ -6,6 +6,7 @@ var Swarm = require('webrtc-swarm')
 
 module.exports = Main
 
+Main.WEBRTC_SUPPORT = Swarm.WEBRTC_SUPPORT
 Main.generateMnemonic = function (length) {
   return randword(length || 3).join('-')
 }
