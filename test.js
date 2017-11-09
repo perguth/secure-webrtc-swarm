@@ -17,14 +17,14 @@ server.listen(9000, function () {
     var hub1 = new Hub('test', 'localhost:9000')
     var hub2 = new Hub('test', 'localhost:9000')
 
-    var mnemonic = Swarm.generateMnemonic()
+    var secret = Swarm.createSecret()
 
     var swarm1 = new Swarm(hub1, {
-      mnemonic,
+      secret,
       wrtc
     })
     var swarm2 = new Swarm(hub2, {
-      mnemonic,
+      secret,
       wrtc
     })
 
