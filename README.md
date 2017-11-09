@@ -24,14 +24,14 @@ var wrtc = require('electron-webrtc')() // not needed in the browser
 var hub1 = Hub('myNamespace', ['https://signalhub.perguth.de:65300/'])
 var hub2 = Hub('myNamespace', ['https://signalhub.perguth.de:65300/'])
 
-var mnemonic = Swarm.createSecret() // default: 3
+var secret = Swarm.createSecret() // default: 3
 
 var swarm1 = new Swarm(hub1, {
-  mnemonic,
+  secret,
   wrtc // not needed in the browser
 })
 new Swarm(hub2, {
-  mnemonic,
+  secret,
   wrtc
 })
 
@@ -43,7 +43,15 @@ swarm1.on('peer', function (peer, id) {
 
 ## API
 
-`secure-webrtc-swarm` shares the same API as [`webrtc-swarm`](https://github.com/mafintosh/webrtc-swarm#api).
+For the most part `secure-webrtc-swarm` shares the same API as [`webrtc-swarm`](https://github.com/mafintosh/webrtc-swarm#api).
+
+### Swarm.createSecret(length)
+
+Creates a random string containg alphanumeric characters.
+
+### swarm.secret
+
+Contains the secret that is shared by the swarm.
 
 ## License
 

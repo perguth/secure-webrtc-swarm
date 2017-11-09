@@ -11,6 +11,7 @@
   "dependencies": {
     "crypto-js": "^3.1.9-1",
     "debug": "^3.1.0",
+    "randomstring": "^1.1.5",
     "webrtc-swarm": "^2.8.0"
   },
   "devDependencies": {
