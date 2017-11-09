@@ -33,7 +33,7 @@ server.listen(9000, function () {
 })
 
 function greetAndClose (swarm1, swarm2) {
-  var greeting = 'hello'
+  var hello = 'hello'
   var goodbye = 'goodbye'
 
   var peerIds = {}
@@ -41,7 +41,7 @@ function greetAndClose (swarm1, swarm2) {
   swarm1.on('peer', function (peer, id) {
     'connected to peer from swarm2'.pass()
     peerIds.swarm2 = id
-    peer.send(greeting)
+    peer.send(hello)
     peer.on('data', function (data) {
       'goodbye received'.equal(data.toString(), goodbye)
       swarm1.close(function () {
@@ -54,7 +54,7 @@ function greetAndClose (swarm1, swarm2) {
     'connected to peer from swarm1'.pass()
     peerIds.swarm1 = id
     peer.on('data', function (data) {
-      'greeting received'.equal(data.toString(), greeting)
+      'hello received'.equal(data.toString(), hello)
       peer.send(goodbye)
       swarm2.close(function () {
         'swarm2 closed'.pass()
