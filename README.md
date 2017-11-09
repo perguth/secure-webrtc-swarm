@@ -15,27 +15,28 @@ npm install secure-webrtc-swarm
 ## Usage
 
 ```js
-var signalhub = require('signalhub')
-var swarm = require('secure-webrtc-swarm')
-var wrtc = require('electron-webrtc')()
+var Hub = require('signalhub')
+var Swarm = require('secure-webrtc-swarm')
+var wrtc = require('electron-webrtc')() // not needed in the browser
 
-var hub1 = signalhub('appName', ['https://signalhub.perguth.de:65300/'])
-var hub2 = signalhub('appName', ['https://signalhub.perguth.de:65300/'])
+var hub1 = Hub('myNamespace', ['https://signalhub.perguth.de:65300/'])
+var hub2 = Hub('myNamespace', ['https://signalhub.perguth.de:65300/'])
 
-var mnemonic = swarm.createMnemonic() // eg. 'scale-world-peace'
+var mnemonic = Swarm.createMnemonic(3) // default: 3
+// eg. mnemonic ==='scale-world-peace'
 
-var sw1 = swarm(hub1, {
+var swarm1 = new Swarm(hub1, {
   mnemonic,
   wrtc // not needed in the browser
 })
-var sw2 = swarm(hub2, {
+new Swarm(hub2, {
   mnemonic,
-  wrtc // not needed in the browser
+  wrtc
 })
 
-sw1.on('peer', function (peer, id) {
+swarm1.on('peer', function (peer, id) {
   console.log('connected to a new peer:', id)
-  console.log('total peers:', sw.peers.length)
+  console.log('total peers:', swarm1.peers.length)
 })
 ```
 
