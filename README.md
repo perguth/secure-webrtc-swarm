@@ -40,6 +40,10 @@ swarm1.on('peer', function (peer, id) {
 })
 ```
 
+## API
+
+`secure-webrtc-swarm` shares the same API as [`webrtc-swarm`](https://github.com/mafintosh/webrtc-swarm#api).
+
 ## License
 
 MIT
