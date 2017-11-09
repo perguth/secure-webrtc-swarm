@@ -1,5 +1,7 @@
 # secure-webrtc-swarm
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/perguth/secure-webrtc-swarm.svg)](https://greenkeeper.io/)
+
 > Create a swarm of p2p connections with invited peers using WebRTC.
 
 Usually when connecting multiple peers via WebRTC personal information like available IP addresses are exchanged via a central WebSocket server. This means that there is the risk of information leakage and man-in-the-middle attacks. `secure-webrtc-swarm` encrypts this data stream using a word mnemonic like `scale-world-peace`.
