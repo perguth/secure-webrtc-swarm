@@ -10,7 +10,6 @@ Main.WEBRTC_SUPPORT = Swarm.WEBRTC_SUPPORT
 Main.createSecret = randomstring.generate
 
 function Main (hub, opts) {
-  if (!(this instanceof Main)) return new Main(hub, opts)
   if (!hub) throw new Error('`signalhub` instance required, see: https://github.com/mafintosh/signalhub')
   opts = opts || {}
   var secret = opts.secret || this.createSecret(16)
