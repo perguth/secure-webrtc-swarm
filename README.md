@@ -43,7 +43,7 @@ swarm1.on('peer', function (peer, id) {
 
 ## API
 
-For the most part `secure-webrtc-swarm` shares the same API as [`webrtc-swarm`](https://github.com/mafintosh/webrtc-swarm#api).
+This module shares the **same API as [`webrtc-swarm`](https://github.com/mafintosh/webrtc-swarm#api)** with the addition of:
 
 ### Swarm.createSecret(length)
 
