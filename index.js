@@ -1,18 +1,18 @@
 var aes = require('crypto-js').AES
 var debug = require('debug')('secure-webrtc-swarm')
 var enc = require('crypto-js').enc.Utf8
-var randomstring = require('randomstring')
+var randomstring = require('randomstring').generate
 var Swarm = require('webrtc-swarm')
 
 module.exports = Main
 
 Main.WEBRTC_SUPPORT = Swarm.WEBRTC_SUPPORT
-Main.createSecret = randomstring.generate
+Main.createSecret = randomstring
 
 function Main (hub, opts) {
   if (!hub) throw new Error('`signalhub` instance required, see: https://github.com/mafintosh/signalhub')
   opts = opts || {}
-  var secret = opts.secret || Main.createSecret(16)
+  var secret = opts.secret || randomstring(16)
 
   opts = Object.assign(opts, {
     wrap: function (data, channel) {
