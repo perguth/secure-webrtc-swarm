@@ -12,7 +12,7 @@ Main.createSecret = randomstring.generate
 function Main (hub, opts) {
   if (!hub) throw new Error('`signalhub` instance required, see: https://github.com/mafintosh/signalhub')
   opts = opts || {}
-  var secret = opts.secret || this.createSecret(16)
+  var secret = opts.secret || Main.createSecret(16)
 
   opts = Object.assign(opts, {
     wrap: function (data, channel) {

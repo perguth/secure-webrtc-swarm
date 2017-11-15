@@ -11,12 +11,10 @@ test.onFinish(function () {
 })
 
 server.listen(9000, function () {
-  'connect using a shared secret'.test(function (t) {
+  'connect using a manually created secret'.test(function (t) {
     t.plan(8)
-
     var hub1 = new Hub('test', 'localhost:9000')
     var hub2 = new Hub('test', 'localhost:9000')
-
     var secret = Swarm.createSecret()
 
     var swarm1 = new Swarm(hub1, {
@@ -25,6 +23,22 @@ server.listen(9000, function () {
     })
     var swarm2 = new Swarm(hub2, {
       secret,
+      wrtc
+    })
+
+    greetAndClose(swarm1, swarm2)
+  })
+
+  'connect using a automatically created secret'.test(function (t) {
+    t.plan(8)
+    var hub1 = new Hub('test', 'localhost:9000')
+    var hub2 = new Hub('test', 'localhost:9000')
+
+    var swarm1 = new Swarm(hub1, {
+      wrtc
+    })
+    var swarm2 = new Swarm(hub2, {
+      secret: swarm1.secret,
       wrtc
     })
 
