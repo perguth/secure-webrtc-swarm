@@ -11,18 +11,19 @@ test.onFinish(function () {
 })
 
 server.listen(9000, function () {
-  'connect using a manually created secret'.test(function (t) {
+  'connect using key discovery'.test(function (t) {
     t.plan(8)
     var hub1 = new Hub('test', 'localhost:9000')
     var hub2 = new Hub('test', 'localhost:9000')
-    var secret = Swarm.createSecret()
+    var secret1 = Swarm.createSecret()
+    var secret2 = Swarm.createSecret()
 
     var swarm1 = new Swarm(hub1, {
-      secret,
+      secrets: [secret1, secret2],
       wrtc
     })
     var swarm2 = new Swarm(hub2, {
-      secret,
+      secret: secret1,
       wrtc
     })
 
@@ -44,9 +45,28 @@ server.listen(9000, function () {
 
     greetAndClose(swarm1, swarm2)
   })
+
+  'connect using a manually created secret'.test(function (t) {
+    t.plan(8)
+    var hub1 = new Hub('test', 'localhost:9000')
+    var hub2 = new Hub('test', 'localhost:9000')
+    var secret = Swarm.createSecret()
+
+    var swarm1 = new Swarm(hub1, {
+      secret,
+      wrtc
+    })
+    var swarm2 = new Swarm(hub2, {
+      secret,
+      wrtc
+    })
+
+    greetAndClose(swarm1, swarm2)
+  })
 })
 
 function greetAndClose (swarm1, swarm2) {
+  // includes 8 tests
   var hello = 'hello'
   var goodbye = 'goodbye'
 

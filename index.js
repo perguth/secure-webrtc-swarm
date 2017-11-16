@@ -12,29 +12,56 @@ Main.createSecret = randomstring
 function Main (hub, opts) {
   if (!hub) throw new Error('`signalhub` instance required, see: https://github.com/mafintosh/signalhub')
   opts = opts || {}
-  var secret = opts.secret || randomstring(16)
+  var knownSecrets = opts.knownSecrets || {}
+  var secrets = opts.secrets || []
+  if (opts.secret) secrets.push(opts.secret)
+  if (!secrets.length) secrets = [randomstring(16)]
 
   opts = Object.assign(opts, {
     wrap: function (data, channel) {
-      if (!data.signal || channel === '/all') return data
-      let signal = JSON.stringify(data.signal)
+      if (!data.signal) return data
+      var secret = knownSecrets[channel] || pickRandom(secrets)
+      var signal = JSON.stringify(data.signal)
       data.signal = aes.encrypt(signal, secret).toString()
       return data
     },
     unwrap: function (data, channel) {
       if (!data.signal) return data
-      try {
-        var signal = (aes.decrypt(data.signal, secret)).toString(enc)
-        data.signal = JSON.parse(signal)
-      } catch (e) {
-        debug(e)
-        return
+      var plaintext
+      var secret = knownSecrets[data.from]
+      if (secret) {
+        plaintext = (aes.decrypt(data.signal, secret)).toString(enc)
+        data.signal = JSON.parse(plaintext)
+        return data
       }
+      debug('Trying to discover key')
+      secret = secrets.find(function (secret) {
+        try {
+          plaintext = (aes.decrypt(data.signal, secret)).toString(enc)
+          data.signal = JSON.parse(plaintext)
+        } catch (err) {
+          return false
+        }
+        debug('Discoverd key', secret)
+        return true
+      })
+      if (!secret) return
+      Object.assign(knownSecrets, {
+        [data.from]: secret
+      })
       return data
     }
   })
 
   var swarm = new Swarm(hub, opts)
-  swarm.secret = secret
+  if (secrets.length === 1) swarm.secret = secrets[0]
+  swarm.secrets = secrets
+  swarm.knownSecrets = knownSecrets
+  // swarm.on('peer', function (peer) {})
   return swarm
+}
+
+function pickRandom (obj) {
+  var props = Object.keys(obj)
+  return obj[props[props.length * Math.random() << 0]]
 }
