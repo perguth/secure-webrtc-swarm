@@ -64,23 +64,44 @@ server.listen(9000, function () {
     greetAndClose(swarm1, swarm2)
   })
 
-  'attach shared secret to `simple-peer` instance'.test(function (t) {
+  'connect using key from after instantiation'.test(function (t) {
     t.plan(8)
     var hub1 = new Hub('test', 'localhost:9000')
     var hub2 = new Hub('test', 'localhost:9000')
     var secret = Swarm.createSecret()
 
     var swarm1 = new Swarm(hub1, {
-      secret,
+      secrets: [secret],
       wrtc
     })
     var swarm2 = new Swarm(hub2, {
-      secret,
+      wrtc
+    })
+
+    setTimeout(x => {
+      swarm2.secrets.push(swarm1.secrets[0])
+      greetAndClose(swarm1, swarm2)
+    }, 300)
+  })
+
+  'attach shared secret to `simple-peer` instance'.test(function (t) {
+    t.plan(1)
+
+    var hub1 = new Hub('test', 'localhost:9000')
+    var hub2 = new Hub('test', 'localhost:9000')
+    var secrets = [Swarm.createSecret()]
+
+    var swarm1 = new Swarm(hub1, {
+      secrets,
+      wrtc
+    })
+    var swarm2 = new Swarm(hub2, {
+      secrets,
       wrtc
     })
 
     swarm1.on('peer', peer => {
-      t.equal(peer.sharedSecret, secret)
+      t.equal(peer.sharedSecret, secrets[0])
       peer.destroy()
       swarm1.close()
       swarm2.close()
