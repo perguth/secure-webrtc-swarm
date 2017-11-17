@@ -63,6 +63,29 @@ server.listen(9000, function () {
 
     greetAndClose(swarm1, swarm2)
   })
+
+  'attach shared secret to `simple-peer` instance'.test(function (t) {
+    t.plan(8)
+    var hub1 = new Hub('test', 'localhost:9000')
+    var hub2 = new Hub('test', 'localhost:9000')
+    var secret = Swarm.createSecret()
+
+    var swarm1 = new Swarm(hub1, {
+      secret,
+      wrtc
+    })
+    var swarm2 = new Swarm(hub2, {
+      secret,
+      wrtc
+    })
+
+    swarm1.on('peer', peer => {
+      t.equal(peer.sharedSecret, secret)
+      peer.destroy()
+      swarm1.close()
+      swarm2.close()
+    })
+  })
 })
 
 function greetAndClose (swarm1, swarm2) {

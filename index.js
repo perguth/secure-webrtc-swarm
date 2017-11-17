@@ -57,7 +57,9 @@ function Main (hub, opts) {
   if (secrets.length === 1) swarm.secret = secrets[0]
   swarm.secrets = secrets
   swarm.knownSecrets = knownSecrets
-  // swarm.on('peer', function (peer) {})
+  swarm.on('peer', function (peer, id) {
+    Object.assign(peer, {sharedSecret: knownSecrets[id]})
+  })
   return swarm
 }
 
