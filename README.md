@@ -24,17 +24,17 @@ var wrtc = require('electron-webrtc')() // not needed in the browser
 var hub1 = new Hub('myNamespace', ['https://signalhub.perguth.de:65300/'])
 var hub2 = new Hub('myNamespace', ['https://signalhub.perguth.de:65300/'])
 
-var secret1 = Swarm.createSecret() // default: 16
-var secret2 = Swarm.createSecret()
+var key1 = Swarm.createKey() // default: 16
+var key2 = Swarm.createKey()
 
 var swarm1 = new Swarm(hub1, {
-  secret1,
+  keys: [key1, key2],
   wrtc // not needed in the browser
 })
-new Swarm(hub2, {
-  secrets: [secret1, secret2],
+var swarm2 = new Swarm(hub2, {
   wrtc
 })
+swarm2.keys.push(key1)
 
 swarm1.on('peer', function (peer, id) {
   console.log('connected to a new peer:', id)
@@ -46,13 +46,17 @@ swarm1.on('peer', function (peer, id) {
 
 This module shares the **same API as [`webrtc-swarm`](https://github.com/mafintosh/webrtc-swarm#api)** with the addition of:
 
-### Swarm.createSecret(length)
+### Swarm.createKey([length])
 
-Creates a random string containg alphanumeric characters.
+Creates a random string containg alphanumeric characters. Default length: 16
 
-### swarm.secret
+### swarm.keys
 
-Contains the secret that is shared by the swarm.
+Contains the keys that are shared within the swarm. Only peers with at least one matching key connect to each other.
+
+## swarm.sharedKeys
+
+Contains learned information about which peer accepts which key.
 
 ## License
 
