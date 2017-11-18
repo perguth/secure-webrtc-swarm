@@ -1,6 +1,6 @@
 {
   "name": "secure-webrtc-swarm",
-  "version": "4.1.1",
+  "version": "5.0.0",
   "description": "A crypto wrapper around `webrtc-swarm`.",
   "main": "index.js",
   "scripts": {
