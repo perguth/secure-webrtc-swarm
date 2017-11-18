@@ -26,6 +26,7 @@ function Main (hub, opts) {
       return data
     },
     unwrap: function (data, channel) {
+      console.log(Object.keys(data))
       if (!data.signal) return data
       var key = this.sharedKeys[data.from]
       if (key) {
