@@ -61,7 +61,7 @@ function Main (hub, opts) {
       if (!key) {
         debug(
           swarm.me,
-          'No shared key found - removing peer from swarm',
+          'No shared key found - trying again next time',
           data.from
         )
         // we need to remove the remote otherwise `webrtc-swarm` won't try again
