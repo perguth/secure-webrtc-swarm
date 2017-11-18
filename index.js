@@ -17,25 +17,19 @@ function Main (hub, opts) {
 
   opts = Object.assign(opts, {
     wrap: function (data, channel) {
+      if (!data.signal) return data
       var key = this.sharedKeys[channel] || pickRandom(this.keys)
-      Object.keys(data).forEach(function (prop) {
-        if (prop === 'type' || prop === 'from') return
-        data[prop] = JSON.stringify(data[prop])
-        data[prop] = aes.encrypt(data[prop], key).toString()
-      })
+      data.signal = JSON.stringify(data.signal)
+      data.signal = aes.encrypt(data.signal, key).toString()
       return data
     },
     unwrap: function (data, channel) {
-      console.log(Object.keys(data))
       if (!data.signal) return data
       var key = this.sharedKeys[data.from]
       if (key) {
         try {
-          Object.keys(data).forEach(function (prop) {
-            if (prop === 'type' || prop === 'from') return
-            data[prop] = aes.decrypt(data[prop], key).toString(enc)
-            data[prop] = JSON.parse(data[prop])
-          })
+          data.signal = aes.decrypt(data.signal, key).toString(enc)
+          data.signal = JSON.parse(data.signal)
         } catch (err) {
           debug(swarm.me,
             'Unable to decrypt message /w known key in channel:',
@@ -50,8 +44,8 @@ function Main (hub, opts) {
         try {
           Object.keys(data).forEach(function (prop) {
             if (prop === 'type' || prop === 'from') return
-            data[prop] = aes.decrypt(data[prop], key).toString(enc)
-            data[prop] = JSON.parse(data[prop])
+            data.signal = aes.decrypt(data.signal, key).toString(enc)
+            data.signal = JSON.parse(data.signal)
           })
         } catch (err) {
           return false
