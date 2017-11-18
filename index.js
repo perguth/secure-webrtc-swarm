@@ -7,58 +7,78 @@ var Swarm = require('webrtc-swarm')
 module.exports = Main
 
 Main.WEBRTC_SUPPORT = Swarm.WEBRTC_SUPPORT
-Main.createSecret = randomstring
+Main.createKey = randomstring
 
 function Main (hub, opts) {
   if (!hub) throw new Error('`signalhub` instance required, see: https://github.com/mafintosh/signalhub')
   opts = opts || {}
-  var knownSecrets = opts.knownSecrets || {}
-  var secrets = opts.secrets || []
-  if (opts.secret) secrets.push(opts.secret)
-  if (!secrets.length) secrets = [randomstring(16)]
+  this.sharedKeys = opts.sharedKeys || {}
+  this.keys = opts.keys || [randomstring(16)]
 
   opts = Object.assign(opts, {
     wrap: function (data, channel) {
-      if (!data.signal) return data
-      var secret = knownSecrets[channel] || pickRandom(secrets)
-      var signal = JSON.stringify(data.signal)
-      data.signal = aes.encrypt(signal, secret).toString()
+      var key = this.sharedKeys[channel] || pickRandom(this.keys)
+      Object.keys(data).forEach(function (prop) {
+        if (prop === 'type' || prop === 'from') return
+        data[prop] = JSON.stringify(data[prop])
+        data[prop] = aes.encrypt(data[prop], key).toString()
+      })
       return data
     },
     unwrap: function (data, channel) {
       if (!data.signal) return data
-      var plaintext
-      var secret = knownSecrets[data.from]
-      if (secret) {
-        plaintext = (aes.decrypt(data.signal, secret)).toString(enc)
-        data.signal = JSON.parse(plaintext)
+      var key = this.sharedKeys[data.from]
+      if (key) {
+        try {
+          Object.keys(data).forEach(function (prop) {
+            if (prop === 'type' || prop === 'from') return
+            data[prop] = aes.decrypt(data[prop], key).toString(enc)
+            data[prop] = JSON.parse(data[prop])
+          })
+        } catch (err) {
+          debug(swarm.me,
+            'Unable to decrypt message /w known key in channel:',
+            channel
+          )
+        }
+        debug(swarm.me, 'Decrypted data w/ known key:', key)
         return data
       }
-      debug('Trying to discover key')
-      secret = secrets.find(function (secret) {
+      debug(swarm.me, 'Trying to discover key out of', this.keys.length)
+      key = this.keys.find(function (key) {
         try {
-          plaintext = (aes.decrypt(data.signal, secret)).toString(enc)
-          data.signal = JSON.parse(plaintext)
+          Object.keys(data).forEach(function (prop) {
+            if (prop === 'type' || prop === 'from') return
+            data[prop] = aes.decrypt(data[prop], key).toString(enc)
+            data[prop] = JSON.parse(data[prop])
+          })
         } catch (err) {
           return false
         }
-        debug('Discoverd key', secret)
+        debug(swarm.me, 'Discoverd key', key)
         return true
       })
-      if (!secret) return
-      Object.assign(knownSecrets, {
-        [data.from]: secret
+      if (!key) {
+        debug(
+          swarm.me,
+          'No shared key found - removing peer from swarm',
+          data.from
+        )
+        // we need to remove the remote otherwise `webrtc-swarm` won't try again
+        delete swarm.remotes[data.from]
+        return
+      }
+      Object.assign(this.sharedKeys, {
+        [data.from]: key
       })
       return data
     }
   })
 
   var swarm = new Swarm(hub, opts)
-  if (secrets.length === 1) swarm.secret = secrets[0]
-  swarm.secrets = secrets
-  swarm.knownSecrets = knownSecrets
+  Object.assign(swarm, this)
   swarm.on('peer', function (peer, id) {
-    Object.assign(peer, {sharedSecret: knownSecrets[id]})
+    Object.assign(peer, {sharedKey: this.sharedKeys[id]})
   })
   return swarm
 }

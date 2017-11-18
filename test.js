@@ -9,100 +9,105 @@ test.onFinish(function () {
   server.close()
   wrtc.close()
 })
+process.on('SIGINT', function () {
+  server.close()
+  wrtc.close()
+  process.exit(1)
+})
 
 server.listen(9000, function () {
-  'connect using key discovery'.test(function (t) {
-    t.plan(8)
-    var hub1 = new Hub('test', 'localhost:9000')
-    var hub2 = new Hub('test', 'localhost:9000')
-    var secret1 = Swarm.createSecret()
-    var secret2 = Swarm.createSecret()
-
-    var swarm1 = new Swarm(hub1, {
-      secrets: [secret1, secret2],
-      wrtc
-    })
-    var swarm2 = new Swarm(hub2, {
-      secret: secret1,
-      wrtc
-    })
-
-    greetAndClose(swarm1, swarm2)
-  })
-
-  'connect using a automatically created secret'.test(function (t) {
-    t.plan(8)
-    var hub1 = new Hub('test', 'localhost:9000')
-    var hub2 = new Hub('test', 'localhost:9000')
-
-    var swarm1 = new Swarm(hub1, {
-      wrtc
-    })
-    var swarm2 = new Swarm(hub2, {
-      secret: swarm1.secret,
-      wrtc
-    })
-
-    greetAndClose(swarm1, swarm2)
-  })
-
-  'connect using a manually created secret'.test(function (t) {
-    t.plan(8)
-    var hub1 = new Hub('test', 'localhost:9000')
-    var hub2 = new Hub('test', 'localhost:9000')
-    var secret = Swarm.createSecret()
-
-    var swarm1 = new Swarm(hub1, {
-      secret,
-      wrtc
-    })
-    var swarm2 = new Swarm(hub2, {
-      secret,
-      wrtc
-    })
-
-    greetAndClose(swarm1, swarm2)
-  })
-
   'connect using key from after instantiation'.test(function (t) {
     t.plan(8)
     var hub1 = new Hub('test', 'localhost:9000')
     var hub2 = new Hub('test', 'localhost:9000')
-    var secret = Swarm.createSecret()
+    var key = Swarm.createKey()
 
     var swarm1 = new Swarm(hub1, {
-      secrets: [secret],
+      keys: [key],
       wrtc
     })
     var swarm2 = new Swarm(hub2, {
       wrtc
     })
+    greetAndClose(swarm1, swarm2)
 
     setTimeout(x => {
-      swarm2.secrets.push(swarm1.secrets[0])
-      greetAndClose(swarm1, swarm2)
-    }, 300)
+      t.comment('Attaching shared key')
+      swarm2.keys.push(swarm1.keys[0])
+    }, 1000) // allow for a couple of failed tries
   })
 
-  'attach shared secret to `simple-peer` instance'.test(function (t) {
+  'connect using key discovery'.test(function (t) {
+    t.plan(8)
+    var hub1 = new Hub('test', 'localhost:9000')
+    var hub2 = new Hub('test', 'localhost:9000')
+    var key1 = Swarm.createKey()
+    var key2 = Swarm.createKey()
+
+    var swarm1 = new Swarm(hub1, {
+      keys: [key1, key2],
+      wrtc
+    })
+    var swarm2 = new Swarm(hub2, {
+      keys: [key1],
+      wrtc
+    })
+
+    greetAndClose(swarm1, swarm2)
+  })
+
+  'connect using a automatically created key'.test(function (t) {
+    t.plan(8)
+    var hub1 = new Hub('test', 'localhost:9000')
+    var hub2 = new Hub('test', 'localhost:9000')
+
+    var swarm1 = new Swarm(hub1, {
+      wrtc
+    })
+    var swarm2 = new Swarm(hub2, {
+      keys: [swarm1.keys[0]],
+      wrtc
+    })
+
+    greetAndClose(swarm1, swarm2)
+  })
+
+  'connect using a manually created key'.test(function (t) {
+    t.plan(8)
+    var hub1 = new Hub('test', 'localhost:9000')
+    var hub2 = new Hub('test', 'localhost:9000')
+    var key = Swarm.createKey()
+
+    var swarm1 = new Swarm(hub1, {
+      keys: [key],
+      wrtc
+    })
+    var swarm2 = new Swarm(hub2, {
+      keys: [key],
+      wrtc
+    })
+
+    greetAndClose(swarm1, swarm2)
+  })
+
+  'attach shared key to `simple-peer` instance'.test(function (t) {
     t.plan(1)
 
     var hub1 = new Hub('test', 'localhost:9000')
     var hub2 = new Hub('test', 'localhost:9000')
-    var secrets = [Swarm.createSecret()]
+    var keys = [Swarm.createKey()]
 
     var swarm1 = new Swarm(hub1, {
-      secrets,
+      keys,
       wrtc
     })
     var swarm2 = new Swarm(hub2, {
-      secrets,
+      keys,
       wrtc
     })
 
     swarm1.on('peer', peer => {
-      t.equal(peer.sharedSecret, secrets[0])
-      peer.destroy()
+      t.equal(peer.sharedKey, keys[0])
       swarm1.close()
       swarm2.close()
     })
