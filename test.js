@@ -1,13 +1,14 @@
 var Hub = require('signalhub')
 var Server = require('signalhub/server')
 var Swarm = require('.')
-var test = require('flip-tape')
+var test = require('flip-tape') // eslint-disable-line
 var wrtc = require('electron-webrtc')()
 var server = new Server()
 
 test.onFinish(function () {
   server.close()
   wrtc.close()
+  process.exit(0)
 })
 process.on('SIGINT', function () {
   server.close()
@@ -90,7 +91,7 @@ server.listen(9000, function () {
     greetAndClose(swarm1, swarm2)
   })
 
-  'attach shared key to `simple-peer` instance'.test(function (t) {
+  'retrieve shared key from `simple-peer` instance'.test(function (t) {
     t.plan(1)
 
     var hub1 = new Hub('test', 'localhost:9000')
@@ -108,8 +109,10 @@ server.listen(9000, function () {
 
     swarm1.on('peer', peer => {
       t.equal(peer.sharedKey, keys[0])
+      peer.destroy() // otherwise `TypeError`
       swarm1.close()
       swarm2.close()
+      console.log('done')
     })
   })
 })
