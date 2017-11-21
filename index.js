@@ -42,11 +42,8 @@ function Main (hub, opts) {
       debug(swarm.me, 'Trying to discover key out of', this.keys.length)
       key = this.keys.find(function (key) {
         try {
-          Object.keys(data).forEach(function (prop) {
-            if (prop === 'type' || prop === 'from') return
-            data.signal = aes.decrypt(data.signal, key).toString(enc)
-            data.signal = JSON.parse(data.signal)
-          })
+          data.signal = aes.decrypt(data.signal, key).toString(enc)
+          data.signal = JSON.parse(data.signal)
         } catch (err) {
           return false
         }
