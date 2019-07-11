@@ -18,6 +18,6 @@
     "electron-webrtc": "^0.3.0",
     "flip-tape": "^4.1.2",
     "signalhub": "^4.9.0",
-    "standard": "^10.0.3"
+    "standard": "^13.0.1"
   }
 }
